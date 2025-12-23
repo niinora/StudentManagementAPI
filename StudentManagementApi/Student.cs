@@ -12,9 +12,9 @@ namespace StudentManagementApi
         [Required]
         [EmailAddress]
         public string Email { get; set; } = null!;
-        [Range(16, int.MaxValue, ErrorMessage = "Age must be at least 16.")]
+        [Range(16, 100, ErrorMessage = "Age must be between 16 and 100.")]
         public int Age { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow.ToLocalTime();
+        public DateTime CreatedAt { get; set; }
 
     }
 }
