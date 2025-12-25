@@ -13,14 +13,45 @@ namespace StudentManagementApi.Controllers
     {
         private readonly StudentDbContext _context = context;
 
+        //[HttpGet]
+        //public async Task<ActionResult<List<StudentResponseDto>>> GetStudents()
+        //{
+        //    var students = await _context.Students.Select(s => s.ToStudentResponseDto()).ToListAsync();
+        //    return Ok(students);
+        //}
+
         [HttpGet]
-        public async Task<ActionResult<List<StudentResponseDto>>> GetStudents()
+        public async Task<ActionResult<List<StudentResponseDto>>> GetStudentsPaged(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? search=null)
         {
-            var students = await _context.Students.Select(s => s.ToStudentResponseDto()).ToListAsync();
-            return Ok(students);
+            var studentQuery = _context.Students.AsQueryable();
+            if (!string.IsNullOrEmpty(search))
+            {
+                studentQuery = studentQuery.Where(s =>
+                    s.FirstName.Contains(search) ||
+                    s.LastName.Contains(search) ||
+                    s.Email.Contains(search));
+            }
+            var totalCount = await studentQuery.CountAsync();
+            var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+            var students = await studentQuery
+                .OrderBy(s => s.Id)
+                .Select(s => s.ToStudentResponseDto())
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+            var pagedResponse = new PagedResponseDto<StudentResponseDto>
+            {
+                Page = page,
+                PageSize = pageSize,
+                Items = students,
+                TotalPages = totalPages
+            };
+            return Ok(pagedResponse);
         }
-
-
 
         [HttpGet("{id}")]
         public async Task<ActionResult<StudentResponseDto>> GetStudentById(int id)
